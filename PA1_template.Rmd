@@ -8,18 +8,106 @@ output:
 
 ## Loading and preprocessing the data
 
-
+```{r}
+library(ggplot2)
+data <- read.csv("./data/activity.csv")
+head(data)
+```
 
 ## What is mean total number of steps taken per day?
 
+* Total of activity by day:
 
+```{r}
+total <- aggregate(steps ~ date, data = data, FUN=sum)
+total
+```
+
+```{r}
+
+ggplot(total, aes(x=steps)) + 
+  geom_histogram(binwidth=1000) + labs(title = "Histogram of the total number of steps taken each day", x="Steps", y="Frequency")
+
+```
+
+
+* Median
+```{r}
+median(total$steps)
+```
+
+* Mean
+```{r}
+mean(total$steps)
+```
 
 ## What is the average daily activity pattern?
 
+```{r}
 
+totalInterval <- aggregate(steps ~ interval, data = data, FUN=sum)
+ggplot(totalInterval, aes(x=interval, y=steps)) + geom_line() + labs(title = "Plot of the total steps taken interval of each date", x="Interval", y="Total steps")
+
+```
+
+* Best 5 minute interval:
+
+```{r}
+idx <- which(totalInterval$steps == max(totalInterval$steps))
+totalInterval$interval[idx]
+```
 
 ## Imputing missing values
 
+* Total of missings:
 
+```{r}
+nrow(data[is.na(data), ])
+```
+
+* Imput missing values by mean:
+
+```{r}
+
+columns = c('steps', 'interval')
+for(column in columns){
+  data[is.na(data[,column]), column] <- mean(data[,column], na.rm = TRUE)
+}
+
+nrow(data[is.na(data), ])
+
+```
+
+```{r}
+total <- aggregate(steps ~ date, data = data, FUN=sum)
+ggplot(total, aes(x=steps)) + 
+  geom_histogram(binwidth=1000) + labs(title = "Histogram of the total number of steps taken each day whithout NA", x="Steps", y="Frequency")
+```
+
+* Median
+```{r}
+median(total$steps)
+```
+
+* Mean
+```{r}
+mean(total$steps)
+```
 
 ## Are there differences in activity patterns between weekdays and weekends?
+
+* Creating a new variable with type of day: 
+```{r}
+
+data$daytype <- ifelse(as.POSIXlt(data$date)$wday %in% c(6,0), 'Weekend', 'Weekday')
+
+```
+
+
+```{r}
+totalInterval <- aggregate(steps ~ interval * daytype, data = data, FUN=sum)
+ggplot(totalInterval, aes(x=interval, y=steps)) + geom_line() + facet_wrap(~ daytype) + labs(title = "Plot of the total steps taken interval of each date, sep. by type of day", x="Interval", y="Total steps")
+
+```
+
+Note that the interval between 800 and 1000 of weekday is much more intense compared by weekend.
